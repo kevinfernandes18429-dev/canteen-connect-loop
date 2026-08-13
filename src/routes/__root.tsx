@@ -7,10 +7,16 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { LanguageProvider } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/auth-context";
+import { CartProvider } from "@/lib/cart-context";
+import { LoadingScreen } from "@/components/app/LoadingScreen";
+import { AppHeader } from "@/components/app/AppHeader";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -44,9 +50,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
@@ -77,19 +81,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Kantin IPEKA Pluit — Pre-Order Makanan Sekolah" },
+      {
+        name: "description",
+        content:
+          "Pre-order makanan dari kantin Takoya, Uncle Fong, Fuel Catering, Ichi Gourmet dan Ceria di Sekolah IPEKA Pluit.",
+      },
+      { property: "og:title", content: "Kantin IPEKA Pluit — Pre-Order Makanan Sekolah" },
+      {
+        property: "og:description",
+        content: "Pesan makanan kantin sebelum bel istirahat, tanpa antre.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -102,7 +114,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="id">
       <head>
         <HeadContent />
       </head>
@@ -114,13 +126,43 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function Boot({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setReady(true), 1700);
+    return () => window.clearTimeout(id);
+  }, []);
+  return (
+    <>
+      {!ready && <LoadingScreen />}
+      {children}
+    </>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <LanguageProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Boot>
+              <div className="flex min-h-screen flex-col">
+                <AppHeader />
+                <main className="flex-1">
+                  <Outlet />
+                </main>
+                <footer className="border-t border-border/70 py-8 text-center text-xs text-muted-foreground">
+                  © {new Date().getFullYear()} Kantin IPEKA Pluit
+                </footer>
+              </div>
+            </Boot>
+            <Toaster position="top-center" richColors />
+          </CartProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
