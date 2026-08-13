@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CanteensRouteImport } from './routes/canteens'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as CanteenSlugRouteImport } from './routes/canteen.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CanteenSlugRoute = CanteenSlugRouteImport.update({
+  id: '/canteen/$slug',
+  path: '/canteen/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/canteens': typeof CanteensRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/canteen/$slug': typeof CanteenSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/canteens': typeof CanteensRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/canteen/$slug': typeof CanteenSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/canteens': typeof CanteensRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/canteen/$slug': typeof CanteenSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/canteens' | '/reset-password'
+  fullPaths: '/' | '/auth' | '/canteens' | '/reset-password' | '/canteen/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/canteens' | '/reset-password'
-  id: '__root__' | '/' | '/auth' | '/canteens' | '/reset-password'
+  to: '/' | '/auth' | '/canteens' | '/reset-password' | '/canteen/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/canteens'
+    | '/reset-password'
+    | '/canteen/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +82,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CanteensRoute: typeof CanteensRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  CanteenSlugRoute: typeof CanteenSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/canteen/$slug': {
+      id: '/canteen/$slug'
+      path: '/canteen/$slug'
+      fullPath: '/canteen/$slug'
+      preLoaderRoute: typeof CanteenSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CanteensRoute: CanteensRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  CanteenSlugRoute: CanteenSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
