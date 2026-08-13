@@ -602,6 +602,7 @@ export type Database = {
       }
       purge_inactive_accounts: { Args: never; Returns: number }
       touch_last_active: { Args: never; Returns: undefined }
+      username_available: { Args: { _username: string }; Returns: boolean }
       was_account_deleted: { Args: { _email: string }; Returns: boolean }
     }
     Enums: {
