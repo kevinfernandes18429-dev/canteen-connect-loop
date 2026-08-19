@@ -1,0 +1,11 @@
+REVOKE EXECUTE ON FUNCTION public.has_role(uuid, app_role) FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.contains_banned_word(text) FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.purge_inactive_accounts() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_order_status() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.reject_banned_words() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.set_updated_at() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.validate_order() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.touch_last_active() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.username_available(text) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.was_account_deleted(text) FROM authenticated;
