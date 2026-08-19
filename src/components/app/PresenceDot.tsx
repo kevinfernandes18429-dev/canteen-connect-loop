@@ -7,7 +7,13 @@ const map: Record<string, string> = {
   invisible: "bg-muted-foreground",
 };
 
-export function PresenceDot({ presence, className }: { presence?: string | null; className?: string }) {
+export function PresenceDot({
+  presence,
+  className,
+}: {
+  presence?: string | null | undefined;
+  className?: string | undefined;
+}) {
   return (
     <span
       className={cn(
