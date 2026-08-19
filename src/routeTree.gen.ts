@@ -13,8 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CanteensRouteImport } from './routes/canteens'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as ForumRouteImport } from './routes/forum'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SellerRouteImport } from './routes/seller'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as CanteenSlugRouteImport } from './routes/canteen.$slug'
+import { Route as UUsernameRouteImport } from './routes/u.$username'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -36,14 +41,39 @@ const CartRoute = CartRouteImport.update({
   path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForumRoute = ForumRouteImport.update({
+  id: '/forum',
+  path: '/forum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SellerRoute = SellerRouteImport.update({
+  id: '/seller',
+  path: '/seller',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CanteenSlugRoute = CanteenSlugRouteImport.update({
   id: '/canteen/$slug',
   path: '/canteen/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UUsernameRoute = UUsernameRouteImport.update({
+  id: '/u/$username',
+  path: '/u/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -52,16 +82,26 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/canteens': typeof CanteensRoute
   '/cart': typeof CartRoute
+  '/forum': typeof ForumRoute
+  '/orders': typeof OrdersRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/seller': typeof SellerRoute
+  '/settings': typeof SettingsRoute
   '/canteen/$slug': typeof CanteenSlugRoute
+  '/u/$username': typeof UUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/canteens': typeof CanteensRoute
   '/cart': typeof CartRoute
+  '/forum': typeof ForumRoute
+  '/orders': typeof OrdersRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/seller': typeof SellerRoute
+  '/settings': typeof SettingsRoute
   '/canteen/$slug': typeof CanteenSlugRoute
+  '/u/$username': typeof UUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,24 +109,54 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/canteens': typeof CanteensRoute
   '/cart': typeof CartRoute
+  '/forum': typeof ForumRoute
+  '/orders': typeof OrdersRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/seller': typeof SellerRoute
+  '/settings': typeof SettingsRoute
   '/canteen/$slug': typeof CanteenSlugRoute
+  '/u/$username': typeof UUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/canteens' | '/cart' | '/reset-password' | '/canteen/$slug'
+    | '/'
+    | '/auth'
+    | '/canteens'
+    | '/cart'
+    | '/forum'
+    | '/orders'
+    | '/reset-password'
+    | '/seller'
+    | '/settings'
+    | '/canteen/$slug'
+    | '/u/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/auth' | '/canteens' | '/cart' | '/reset-password' | '/canteen/$slug'
+    | '/'
+    | '/auth'
+    | '/canteens'
+    | '/cart'
+    | '/forum'
+    | '/orders'
+    | '/reset-password'
+    | '/seller'
+    | '/settings'
+    | '/canteen/$slug'
+    | '/u/$username'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/canteens'
     | '/cart'
+    | '/forum'
+    | '/orders'
     | '/reset-password'
+    | '/seller'
+    | '/settings'
     | '/canteen/$slug'
+    | '/u/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,8 +164,13 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CanteensRoute: typeof CanteensRoute
   CartRoute: typeof CartRoute
+  ForumRoute: typeof ForumRoute
+  OrdersRoute: typeof OrdersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SellerRoute: typeof SellerRoute
+  SettingsRoute: typeof SettingsRoute
   CanteenSlugRoute: typeof CanteenSlugRoute
+  UUsernameRoute: typeof UUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,6 +203,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forum': {
+      id: '/forum'
+      path: '/forum'
+      fullPath: '/forum'
+      preLoaderRoute: typeof ForumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -135,11 +224,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/seller': {
+      id: '/seller'
+      path: '/seller'
+      fullPath: '/seller'
+      preLoaderRoute: typeof SellerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/canteen/$slug': {
       id: '/canteen/$slug'
       path: '/canteen/$slug'
       fullPath: '/canteen/$slug'
       preLoaderRoute: typeof CanteenSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$username': {
+      id: '/u/$username'
+      path: '/u/$username'
+      fullPath: '/u/$username'
+      preLoaderRoute: typeof UUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -150,8 +260,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CanteensRoute: CanteensRoute,
   CartRoute: CartRoute,
+  ForumRoute: ForumRoute,
+  OrdersRoute: OrdersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SellerRoute: SellerRoute,
+  SettingsRoute: SettingsRoute,
   CanteenSlugRoute: CanteenSlugRoute,
+  UUsernameRoute: UUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

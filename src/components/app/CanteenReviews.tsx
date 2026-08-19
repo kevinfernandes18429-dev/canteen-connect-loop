@@ -50,10 +50,27 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("reviews")
-        .select("*, profiles(username, avatar_url, class), review_votes(user_id, value), review_replies(id, body, user_id, created_at, profiles(username, avatar_url))")
+        .select("*, review_votes(user_id, value), review_replies(id, body, user_id, created_at)")
         .eq("canteen_id", canteenId)
         .order("created_at", { ascending: false });
       return data ?? [];
+    },
+  });
+
+  const { data: people } = useQuery({
+    queryKey: ["review-people", canteenId, (reviews ?? []).length],
+    enabled: !!reviews,
+    queryFn: async () => {
+      const ids = new Set<string>();
+      for (const r of reviews ?? []) {
+        ids.add(r.user_id);
+        for (const rep of (r.review_replies ?? []) as { user_id: string }[]) ids.add(rep.user_id);
+      }
+      if (ids.size === 0) return {} as Record<string, { username: string; avatar_url: string | null; class: string }>;
+      const { data } = await supabase.from("profiles").select("id, username, avatar_url, class").in("id", [...ids]);
+      const map: Record<string, { username: string; avatar_url: string | null; class: string }> = {};
+      for (const p of data ?? []) map[p.id] = { username: p.username, avatar_url: p.avatar_url, class: p.class };
+      return map;
     },
   });
 
@@ -152,15 +169,11 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
       <div className="mt-5 space-y-4">
         {(reviews ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("review.empty")}</p>}
         {(reviews ?? []).map((r) => {
-          const author = r.profiles as { username: string; avatar_url: string | null; class: string } | null;
+          const author = people?.[r.user_id] ?? null;
           const votes = (r.review_votes ?? []) as { user_id: string; value: number }[];
           const score = votes.reduce((s, v) => s + v.value, 0);
           const mine = votes.find((v) => v.user_id === user?.id)?.value ?? 0;
-          const replies = (r.review_replies ?? []) as {
-            id: string;
-            body: string;
-            profiles: { username: string; avatar_url: string | null } | null;
-          }[];
+          const replies = (r.review_replies ?? []) as { id: string; body: string; user_id: string }[];
           return (
             <article key={r.id} className="surface-card p-5">
               <div className="flex items-start gap-3">
@@ -209,7 +222,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
                     <div className="mt-3 space-y-2 border-l-2 border-border pl-3">
                       {replies.map((rep) => (
                         <p key={rep.id} className="text-sm">
-                          <span className="font-semibold">@{rep.profiles?.username}</span>{" "}
+                          <span className="font-semibold">@{people?.[rep.user_id]?.username ?? "user"}</span>{" "}
                           <span className="text-muted-foreground">{rep.body}</span>
                         </p>
                       ))}
