@@ -91,7 +91,7 @@ function SellerPage() {
                   size="sm"
                   onClick={async () => {
                     const { error } = await supabase.from("canteens").update({ owner_id: user.id }).eq("id", c.id);
-                    if (error) return toast.error(error.message);
+                    if (error) { toast.error(error.message); return; }
                     void qc.invalidateQueries({ queryKey: ["my-canteen"] });
                   }}
                 >
@@ -146,7 +146,7 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
       image_url: item.image_url,
       is_available: item.is_available,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setOpen(false);
     setItem({ name: "", description: "", price: "", image_url: null, is_available: true });
     void qc.invalidateQueries({ queryKey: ["seller-menu", canteenId] });
@@ -158,7 +158,7 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
       .from("orders")
       .update({ status: status as (typeof ORDER_STATUSES)[number] })
       .eq("id", orderId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     void qc.invalidateQueries({ queryKey: ["seller-orders", canteenId] });
   };
 

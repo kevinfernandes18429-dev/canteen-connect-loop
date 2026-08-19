@@ -46,7 +46,7 @@ function OrderChat({ orderId }: { orderId: string }) {
     const { error } = await supabase
       .from("messages")
       .insert({ order_id: orderId, sender_id: user.id, body: body.trim().slice(0, 500) });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setBody("");
     void qc.invalidateQueries({ queryKey: ["messages", orderId] });
   };

@@ -69,7 +69,7 @@ function ForumPage() {
     const { error } = await supabase
       .from("forum_posts")
       .insert({ user_id: user.id, title: title.trim().slice(0, 150), body: body.trim().slice(0, 3000) });
-    if (error) return toast.error(error.message.includes("BANNED_WORD") ? t("filter.blocked") : error.message);
+    if (error) { toast.error(error.message.includes("BANNED_WORD") ? t("filter.blocked") : error.message); return; }
     setOpen(false);
     setTitle("");
     setBody("");
@@ -87,7 +87,7 @@ function ForumPage() {
     const { error } = await supabase
       .from("forum_comments")
       .insert({ post_id: postId, user_id: user.id, body: comment.trim().slice(0, 1000) });
-    if (error) return toast.error(error.message.includes("BANNED_WORD") ? t("filter.blocked") : error.message);
+    if (error) { toast.error(error.message.includes("BANNED_WORD") ? t("filter.blocked") : error.message); return; }
     setComment("");
     setCommentFor(null);
     void qc.invalidateQueries({ queryKey: ["forum-posts"] });

@@ -90,7 +90,7 @@ function SettingsPage() {
       })
       .eq("id", user.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await refreshProfile();
     toast.success(t("settings.saved"));
   };
