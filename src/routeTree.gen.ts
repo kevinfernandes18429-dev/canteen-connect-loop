@@ -16,6 +16,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as ForumRouteImport } from './routes/forum'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SellerRouteImport } from './routes/seller'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as CanteenSlugRouteImport } from './routes/canteen.$slug'
 import { Route as UUsernameRouteImport } from './routes/u.$username'
@@ -55,6 +56,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SellerRoute = SellerRouteImport.update({
+  id: '/seller',
+  path: '/seller',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/forum': typeof ForumRoute
   '/orders': typeof OrdersRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/seller': typeof SellerRoute
   '/settings': typeof SettingsRoute
   '/canteen/$slug': typeof CanteenSlugRoute
   '/u/$username': typeof UUsernameRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/forum': typeof ForumRoute
   '/orders': typeof OrdersRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/seller': typeof SellerRoute
   '/settings': typeof SettingsRoute
   '/canteen/$slug': typeof CanteenSlugRoute
   '/u/$username': typeof UUsernameRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/forum': typeof ForumRoute
   '/orders': typeof OrdersRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/seller': typeof SellerRoute
   '/settings': typeof SettingsRoute
   '/canteen/$slug': typeof CanteenSlugRoute
   '/u/$username': typeof UUsernameRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/forum'
     | '/orders'
     | '/reset-password'
+    | '/seller'
     | '/settings'
     | '/canteen/$slug'
     | '/u/$username'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/forum'
     | '/orders'
     | '/reset-password'
+    | '/seller'
     | '/settings'
     | '/canteen/$slug'
     | '/u/$username'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/forum'
     | '/orders'
     | '/reset-password'
+    | '/seller'
     | '/settings'
     | '/canteen/$slug'
     | '/u/$username'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   ForumRoute: typeof ForumRoute
   OrdersRoute: typeof OrdersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SellerRoute: typeof SellerRoute
   SettingsRoute: typeof SettingsRoute
   CanteenSlugRoute: typeof CanteenSlugRoute
   UUsernameRoute: typeof UUsernameRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/seller': {
+      id: '/seller'
+      path: '/seller'
+      fullPath: '/seller'
+      preLoaderRoute: typeof SellerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForumRoute: ForumRoute,
   OrdersRoute: OrdersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SellerRoute: SellerRoute,
   SettingsRoute: SettingsRoute,
   CanteenSlugRoute: CanteenSlugRoute,
   UUsernameRoute: UUsernameRoute,
