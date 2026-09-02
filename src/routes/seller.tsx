@@ -232,12 +232,26 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
           {(orders ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("orders.empty")}</p>}
           {(orders ?? []).map((o) => {
             const brk = BREAK_TIMES.find((b) => b.value === o.break_time);
+            const cust = customers?.get(o.user_id);
             return (
               <article key={o.id} className="surface-card p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    {o.pickup_date} · {lang === "en" ? brk?.labelEn : brk?.labelId}
-                  </p>
+                  <div>
+                    <p className="font-semibold">
+                      {cust ? (
+                        <Link to="/u/$username" params={{ username: cust.username }} className="hover:underline">
+                          {cust.full_name || cust.username}
+                        </Link>
+                      ) : (
+                        t("seller.customer")
+                      )}
+                      {cust?.class ? <span className="ml-2 text-xs font-normal text-muted-foreground">{cust.class}</span> : null}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {cust ? "@" + cust.username + " · " : ""}
+                      {o.pickup_date} · {lang === "en" ? brk?.labelEn : brk?.labelId}
+                    </p>
+                  </div>
                   <span className={"rounded-full px-3 py-1 text-xs font-semibold " + (STATUS_STYLES[o.status] ?? "")}>
                     {t(("status." + o.status) as TKey)}
                   </span>
