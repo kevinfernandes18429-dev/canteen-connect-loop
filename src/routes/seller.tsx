@@ -305,13 +305,56 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
         </TabsContent>
 
         <TabsContent value="menu" className="mt-6 space-y-4">
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">{t("seller.addItem")}</Button>
-            </DialogTrigger>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button size="sm" onClick={openCreate}>{t("seller.addItem")}</Button>
+            {(menu ?? []).length > 0 && (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={(v) => setSelected(v ? new Set((menu ?? []).map((m) => m.id)) : new Set())}
+                />
+                {t("seller.selectAll")}
+              </label>
+            )}
+          </div>
+
+          {selected.size > 0 && (
+            <div className="surface-card flex flex-wrap items-center gap-2 border-primary/30 bg-primary/5 p-3">
+              <span className="mr-auto text-sm font-semibold">
+                {selected.size} {t("seller.selected")}
+              </span>
+              {selected.size === 1 && (
+                <Button size="sm" variant="outline" onClick={() => {
+                  const m = (menu ?? []).find((x) => x.id === ids[0]);
+                  if (m) openEdit(m);
+                }}>
+                  {t("common.edit")}
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => bulkAvailability(true)}>{t("seller.setAvailable")}</Button>
+              <Button size="sm" variant="outline" onClick={() => bulkAvailability(false)}>{t("seller.setUnavailable")}</Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive">{t("seller.deleteSelected")}</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("seller.confirmTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("seller.confirmDelete")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={bulkDelete}>{t("common.confirm")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditingId(null); }}>
             <DialogContent className="max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{t("seller.addItem")}</DialogTitle>
+                <DialogTitle>{editingId ? t("seller.editItem") : t("seller.addItem")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-1.5">
@@ -332,6 +375,9 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("seller.photo")}</Label>
+                  {item.image_url && (
+                    <img src={item.image_url} alt={item.name} className="h-24 w-24 rounded-xl object-cover" />
+                  )}
                   <Input
                     type="file"
                     accept="image/*"
@@ -359,7 +405,15 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
           </Dialog>
 
           {(menu ?? []).map((m) => (
-            <div key={m.id} className="surface-card flex flex-wrap items-center gap-3 p-4">
+            <div
+              key={m.id}
+              className={
+                "surface-card flex flex-wrap items-center gap-3 p-4 transition-colors " +
+                (selected.has(m.id) ? "ring-2 ring-primary/40" : "")
+              }
+            >
+              <Checkbox checked={selected.has(m.id)} onCheckedChange={(v) => toggleSelect(m.id, !!v)} aria-label={m.name} />
+              {m.image_url && <img src={m.image_url} alt={m.name} className="h-14 w-14 rounded-lg object-cover" />}
               <div className="min-w-40 flex-1">
                 <p className="font-semibold">{m.name}</p>
                 <p className="text-sm text-accent">{formatRupiah(m.price)}</p>
@@ -372,16 +426,32 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
                   void qc.invalidateQueries({ queryKey: ["seller-menu", canteenId] });
                 }}
               />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                  await supabase.from("menu_items").delete().eq("id", m.id);
-                  void qc.invalidateQueries({ queryKey: ["seller-menu", canteenId] });
-                }}
-              >
-                {t("common.delete")}
+              <Button variant="outline" size="sm" onClick={() => openEdit(m)}>
+                {t("common.edit")}
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm">{t("common.delete")}</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("seller.confirmTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("seller.confirmDelete")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        const { error } = await supabase.from("menu_items").delete().eq("id", m.id);
+                        if (error) { toast.error(error.message); return; }
+                        void qc.invalidateQueries({ queryKey: ["seller-menu", canteenId] });
+                      }}
+                    >
+                      {t("common.confirm")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ))}
         </TabsContent>
