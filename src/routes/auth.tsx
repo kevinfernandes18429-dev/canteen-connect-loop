@@ -23,6 +23,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const ALLOWED_DOMAINS = ["gmail.com", "yahoo.com", "pluit.ipeka.sch.id"] as const;
+
 const signUpSchema = z.object({
   username: z
     .string()
