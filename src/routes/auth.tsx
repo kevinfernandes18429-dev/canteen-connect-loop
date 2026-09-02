@@ -258,6 +258,25 @@ function AuthPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="su-email">{t("auth.email")}</Label>
                 <Input id="su-email" type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required maxLength={255} />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {ALLOWED_DOMAINS.map((d) => {
+                    const local = suEmail.split("@")[0] ?? "";
+                    const active = suEmail.toLowerCase().endsWith("@" + d);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setSuEmail(local + "@" + d)}
+                        className={
+                          "rounded-full border px-2.5 py-0.5 text-xs transition-colors " +
+                          (active ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:bg-secondary")
+                        }
+                      >
+                        @{d}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="su-pass">{t("auth.password")}</Label>
