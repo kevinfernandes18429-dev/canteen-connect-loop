@@ -30,7 +30,14 @@ const signUpSchema = z.object({
     .min(3)
     .max(20)
     .regex(/^[a-zA-Z0-9_.]+$/),
-  email: z.string().trim().email().max(255),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(255)
+    .refine((v) => ALLOWED_DOMAINS.some((d) => v.toLowerCase().endsWith("@" + d)), {
+      message: "Email harus @gmail.com, @yahoo.com, atau @pluit.ipeka.sch.id",
+    }),
   password: z.string().min(8).max(72),
   fullName: z.string().trim().min(2).max(80),
   klass: z.string().trim().min(1).max(20),
