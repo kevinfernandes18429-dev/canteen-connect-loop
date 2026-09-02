@@ -108,12 +108,17 @@ function SellerPage() {
   return <SellerDashboard canteenId={canteen.id} canteenName={canteen.name} lang={lang} />;
 }
 
+type ItemForm = { name: string; description: string; price: string; image_url: string | null; is_available: boolean };
+const EMPTY_ITEM: ItemForm = { name: "", description: "", price: "", image_url: null, is_available: true };
+
 function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; canteenName: string; lang: string }) {
   const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [item, setItem] = useState({ name: "", description: "", price: "", image_url: null as string | null, is_available: true });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [item, setItem] = useState<ItemForm>(EMPTY_ITEM);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data: menu } = useQuery({
     queryKey: ["seller-menu", canteenId],
@@ -136,19 +141,69 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
     },
   });
 
+  const customerIds = Array.from(new Set((orders ?? []).map((o) => o.user_id)));
+  const { data: customers } = useQuery({
+    queryKey: ["seller-customers", customerIds.join(",")],
+    enabled: customerIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id, username, full_name, class").in("id", customerIds);
+      return new Map((data ?? []).map((p) => [p.id, p]));
+    },
+  });
+
+  const openCreate = () => {
+    setEditingId(null);
+    setItem(EMPTY_ITEM);
+    setOpen(true);
+  };
+
+  const openEdit = (m: NonNullable<typeof menu>[number]) => {
+    setEditingId(m.id);
+    setItem({ name: m.name, description: m.description, price: String(m.price), image_url: m.image_url, is_available: m.is_available });
+    setOpen(true);
+  };
+
   const saveItem = async () => {
     if (!item.name.trim()) return;
-    const { error } = await supabase.from("menu_items").insert({
-      canteen_id: canteenId,
+    const payload = {
       name: item.name.trim().slice(0, 80),
       description: item.description.trim().slice(0, 300),
       price: Number(item.price) || 0,
       image_url: item.image_url,
       is_available: item.is_available,
-    });
+    };
+    const { error } = editingId
+      ? await supabase.from("menu_items").update(payload).eq("id", editingId)
+      : await supabase.from("menu_items").insert({ canteen_id: canteenId, ...payload });
     if (error) { toast.error(error.message); return; }
     setOpen(false);
-    setItem({ name: "", description: "", price: "", image_url: null, is_available: true });
+    setEditingId(null);
+    setItem(EMPTY_ITEM);
+    void qc.invalidateQueries({ queryKey: ["seller-menu", canteenId] });
+    toast.success(t("settings.saved"));
+  };
+
+  const toggleSelect = (id: string, on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id); else next.delete(id);
+      return next;
+    });
+
+  const allSelected = (menu ?? []).length > 0 && selected.size === (menu ?? []).length;
+  const ids = Array.from(selected);
+
+  const bulkAvailability = async (v: boolean) => {
+    const { error } = await supabase.from("menu_items").update({ is_available: v }).in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    setSelected(new Set());
+    void qc.invalidateQueries({ queryKey: ["seller-menu", canteenId] });
+  };
+
+  const bulkDelete = async () => {
+    const { error } = await supabase.from("menu_items").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    setSelected(new Set());
     void qc.invalidateQueries({ queryKey: ["seller-menu", canteenId] });
     toast.success(t("settings.saved"));
   };
