@@ -23,6 +23,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const ALLOWED_DOMAINS = ["gmail.com", "yahoo.com", "pluit.ipeka.sch.id"] as const;
+
 const signUpSchema = z.object({
   username: z
     .string()
@@ -30,7 +32,14 @@ const signUpSchema = z.object({
     .min(3)
     .max(20)
     .regex(/^[a-zA-Z0-9_.]+$/),
-  email: z.string().trim().email().max(255),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(255)
+    .refine((v) => ALLOWED_DOMAINS.some((d) => v.toLowerCase().endsWith("@" + d)), {
+      message: "Email harus @gmail.com, @yahoo.com, atau @pluit.ipeka.sch.id",
+    }),
   password: z.string().min(8).max(72),
   fullName: z.string().trim().min(2).max(80),
   klass: z.string().trim().min(1).max(20),
@@ -249,6 +258,25 @@ function AuthPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="su-email">{t("auth.email")}</Label>
                 <Input id="su-email" type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required maxLength={255} />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {ALLOWED_DOMAINS.map((d) => {
+                    const local = suEmail.split("@")[0] ?? "";
+                    const active = suEmail.toLowerCase().endsWith("@" + d);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setSuEmail(local + "@" + d)}
+                        className={
+                          "rounded-full border px-2.5 py-0.5 text-xs transition-colors " +
+                          (active ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:bg-secondary")
+                        }
+                      >
+                        @{d}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="su-pass">{t("auth.password")}</Label>
