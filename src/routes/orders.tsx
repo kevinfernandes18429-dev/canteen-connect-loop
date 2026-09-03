@@ -87,19 +87,13 @@ function OrdersPage() {
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <span className="font-display font-bold">{formatRupiah(o.total)}</span>
                 <div className="flex gap-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
+                  {o.canteens?.slug && (
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/chat" search={{ canteen: o.canteens.slug }}>
                         {t("orders.chat")}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{t("orders.chat")}</DialogTitle>
-                      </DialogHeader>
-                      <OrderChat orderId={o.id} />
-                    </DialogContent>
-                  </Dialog>
+                      </Link>
+                    </Button>
+                  )}
                   {o.canteens?.slug && (
                     <Button asChild size="sm" variant="secondary">
                       <Link to="/canteen/$slug" params={{ slug: o.canteens.slug }}>

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, formatRupiah, type TKey } from "@/lib/i18n";
 import { formatClass } from "@/lib/classes";
-import { BREAK_TIMES, ORDER_STATUSES, STATUS_STYLES } from "@/lib/constants";
+import { ACTIVE_STATUSES, BREAK_TIMES, ORDER_STATUSES, STATUS_STYLES } from "@/lib/constants";
 import { uploadMedia } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,23 +47,14 @@ export const Route = createFileRoute("/seller")({
 function SellerPage() {
   const { t, lang } = useI18n();
   const { user, role } = useAuth();
-  const qc = useQueryClient();
 
   const { data: canteen, isLoading } = useQuery({
     queryKey: ["my-canteen", user?.id],
     enabled: !!user,
+    refetchInterval: (q) => (q.state.data ? false : 15000),
     queryFn: async () => {
       const { data } = await supabase.from("canteens").select("*").eq("owner_id", user!.id).maybeSingle();
       return data;
-    },
-  });
-
-  const { data: unowned } = useQuery({
-    queryKey: ["unowned-canteens"],
-    enabled: !!user && !canteen && !isLoading,
-    queryFn: async () => {
-      const { data } = await supabase.from("canteens").select("id, name, slug").is("owner_id", null).order("name");
-      return data ?? [];
     },
   });
 
@@ -83,26 +75,10 @@ function SellerPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">
         <h1 className="font-display text-3xl font-bold">{t("seller.title")}</h1>
-        <p className="mt-3 text-sm text-muted-foreground">{t("seller.noCanteen")}</p>
-        {role === "canteen_owner" && (
-          <div className="mt-6 space-y-3">
-            {(unowned ?? []).map((c) => (
-              <div key={c.id} className="surface-card flex items-center justify-between gap-3 p-4">
-                <span className="font-semibold">{c.name}</span>
-                <Button
-                  size="sm"
-                  onClick={async () => {
-                    const { error } = await supabase.from("canteens").update({ owner_id: user.id }).eq("id", c.id);
-                    if (error) { toast.error(error.message); return; }
-                    void qc.invalidateQueries({ queryKey: ["my-canteen"] });
-                  }}
-                >
-                  {t("seller.claim")}
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="surface-card mt-6 flex items-start gap-3 border-accent/30 bg-accent/5 p-5">
+          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+          <p className="text-sm">{role === "canteen_owner" ? t("seller.pending") : t("seller.noCanteen")}</p>
+        </div>
       </div>
     );
   }
