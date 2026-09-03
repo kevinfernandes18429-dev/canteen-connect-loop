@@ -1,20 +1,34 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowBigDown, ArrowBigUp, Star } from "lucide-react";
+import { ArrowBigDown, ArrowBigUp, Pencil, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { useI18n, formatRupiah } from "@/lib/i18n";
+import { useI18n, formatRupiah, type TKey } from "@/lib/i18n";
 import { formatClass } from "@/lib/classes";
+import { ORDER_TYPES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-function Stars({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
+export function Stars({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
@@ -32,17 +46,129 @@ function Stars({ value, onChange }: { value: number; onChange?: (v: number) => v
   );
 }
 
+export function orderTypeLabel(v: string, t: (k: TKey) => string) {
+  return (ORDER_TYPES as readonly string[]).includes(v) ? t(("orderType." + v) as TKey) : v;
+}
+
+type ReviewForm = {
+  food: number;
+  service: number;
+  body: string;
+  orderType: string;
+  foods: string[];
+  price: number;
+};
+
+const EMPTY_FORM: ReviewForm = { food: 5, service: 5, body: "", orderType: "", foods: [], price: 0 };
+
+/** Shared review editor used by students (create/edit own) and admins (edit any). */
+export function ReviewEditor({
+  canteenId,
+  open,
+  onOpenChange,
+  initial,
+  onSave,
+  saving,
+}: {
+  canteenId: string;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  initial: ReviewForm;
+  onSave: (f: ReviewForm) => void;
+  saving?: boolean;
+}) {
+  const { t } = useI18n();
+  const [form, setForm] = useState<ReviewForm>(initial);
+
+  // reset when re-opened with different initial values
+  const [seen, setSeen] = useState(initial);
+  if (seen !== initial) {
+    setSeen(initial);
+    setForm(initial);
+  }
+
+  const { data: menu } = useQuery({
+    queryKey: ["menu-names", canteenId],
+    enabled: open,
+    queryFn: async () => (await supabase.from("menu_items").select("name, price").eq("canteen_id", canteenId).order("name")).data ?? [],
+  });
+
+  const toggleFood = (name: string, on: boolean) => {
+    const foods = on ? [...new Set([...form.foods, name])] : form.foods.filter((f) => f !== name);
+    const price = (menu ?? []).filter((m) => foods.includes(m.name)).reduce((s, m) => s + m.price, 0);
+    setForm({ ...form, foods, price });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("review.write")}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>{t("review.food")}</Label>
+            <Stars value={form.food} onChange={(v) => setForm({ ...form, food: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>{t("review.service")}</Label>
+            <Stars value={form.service} onChange={(v) => setForm({ ...form, service: v })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("review.orderType")}</Label>
+            <Select value={form.orderType} onValueChange={(v) => setForm({ ...form, orderType: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("review.orderTypePlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {ORDER_TYPES.map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {t(("orderType." + o) as TKey)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("review.foodType")}</Label>
+            <p className="text-xs text-muted-foreground">{t("review.foodTypeHint")}</p>
+            <div className="max-h-44 space-y-1 overflow-y-auto rounded-xl border border-border p-2">
+              {(menu ?? []).length === 0 && <p className="p-2 text-xs text-muted-foreground">{t("menu.empty")}</p>}
+              {(menu ?? []).map((m) => (
+                <label key={m.name} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-secondary">
+                  <Checkbox checked={form.foods.includes(m.name)} onCheckedChange={(v) => toggleFood(m.name, !!v)} />
+                  <span className="flex-1">{m.name}</span>
+                  <span className="text-xs text-muted-foreground">{formatRupiah(m.price)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("review.pricePerPerson")}</Label>
+            <Input value={formatRupiah(form.price)} readOnly className="bg-secondary/60" />
+            <p className="text-xs text-muted-foreground">{t("review.priceAuto")}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("review.body")}</Label>
+            <Textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} maxLength={1000} rows={4} />
+          </div>
+          <Button className="w-full" onClick={() => onSave(form)} disabled={saving || !form.orderType}>
+            {t("review.submit")}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CanteenReviews({ canteenId }: { canteenId: string }) {
   const { t, lang } = useI18n();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const qc = useQueryClient();
+  const isAdmin = role === "admin";
   const [open, setOpen] = useState(false);
-  const [food, setFood] = useState(5);
-  const [service, setService] = useState(5);
-  const [body, setBody] = useState("");
-  const [orderType, setOrderType] = useState("");
-  const [foodType, setFoodType] = useState("");
-  const [price, setPrice] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [initial, setInitial] = useState<ReviewForm>(EMPTY_FORM);
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
 
@@ -75,33 +201,68 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
     },
   });
 
-  const submit = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("reviews").insert({
-        canteen_id: canteenId,
-        user_id: user!.id,
-        body: body.trim().slice(0, 1000),
-        order_type: orderType.slice(0, 60),
-        food_type: foodType.slice(0, 60),
-        price_per_person: Number(price) || 0,
-        food_rating: food,
-        service_rating: service,
-      });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["reviews", canteenId] });
+  const onErr = (e: Error) => toast.error(e.message.includes("BANNED_WORD") ? t("filter.blocked") : e.message);
+
+  const save = useMutation({
+    mutationFn: async (f: ReviewForm) => {
+      const payload = {
+        body: f.body.trim().slice(0, 1000),
+        order_type: f.orderType.slice(0, 60),
+        food_type: f.foods.join(", ").slice(0, 200),
+        price_per_person: f.price,
+        food_rating: f.food,
+        service_rating: f.service,
+      };
+      const { error } = editingId
+        ? await supabase.from("reviews").update(payload).eq("id", editingId)
+        : await supabase.from("reviews").insert({ canteen_id: canteenId, user_id: user!.id, ...payload });
       if (error) throw error;
     },
     onSuccess: () => {
       setOpen(false);
-      setBody("");
-      void qc.invalidateQueries({ queryKey: ["reviews", canteenId] });
+      setEditingId(null);
+      void invalidate();
       toast.success(t("settings.saved"));
     },
-    onError: (e: Error) => toast.error(e.message.includes("BANNED_WORD") ? t("filter.blocked") : e.message),
+    onError: onErr,
   });
+
+  const openCreate = () => {
+    setEditingId(null);
+    setInitial({ ...EMPTY_FORM });
+    setOpen(true);
+  };
+
+  const openEdit = (r: NonNullable<typeof reviews>[number]) => {
+    setEditingId(r.id);
+    setInitial({
+      food: Number(r.food_rating),
+      service: Number(r.service_rating),
+      body: r.body,
+      orderType: r.order_type,
+      foods: r.food_type ? r.food_type.split(", ").filter(Boolean) : [],
+      price: r.price_per_person,
+    });
+    setOpen(true);
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("reviews").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    void invalidate();
+  };
+
+  const removeReply = async (id: string) => {
+    const { error } = await supabase.from("review_replies").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    void invalidate();
+  };
 
   const vote = async (reviewId: string, value: number) => {
     if (!user) return;
     await supabase.from("review_votes").upsert({ review_id: reviewId, user_id: user.id, value }, { onConflict: "review_id,user_id" });
-    void qc.invalidateQueries({ queryKey: ["reviews", canteenId] });
+    void invalidate();
   };
 
   const sendReply = async (reviewId: string) => {
@@ -109,13 +270,10 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
     const { error } = await supabase
       .from("review_replies")
       .insert({ review_id: reviewId, user_id: user.id, body: replyBody.trim().slice(0, 500) });
-    if (error) {
-      toast.error(error.message.includes("BANNED_WORD") ? t("filter.blocked") : error.message);
-      return;
-    }
+    if (error) { onErr(error); return; }
     setReplyBody("");
     setReplyFor(null);
-    void qc.invalidateQueries({ queryKey: ["reviews", canteenId] });
+    void invalidate();
   };
 
   return (
@@ -123,49 +281,13 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
       <div className="flex items-center justify-between">
         <h2 className="font-display text-2xl font-bold">{t("review.title")}</h2>
         {user && (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                {t("review.write")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{t("review.write")}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>{t("review.food")}</Label>
-                  <Stars value={food} onChange={setFood} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label>{t("review.service")}</Label>
-                  <Stars value={service} onChange={setService} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("review.orderType")}</Label>
-                  <Input value={orderType} onChange={(e) => setOrderType(e.target.value)} maxLength={60} placeholder="Pre-order / Dine in" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("review.foodType")}</Label>
-                  <Input value={foodType} onChange={(e) => setFoodType(e.target.value)} maxLength={60} placeholder="Ricebowl, snack..." />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("review.pricePerPerson")}</Label>
-                  <Input value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, "").slice(0, 7))} inputMode="numeric" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("review.body")}</Label>
-                  <Textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} rows={4} />
-                </div>
-                <Button className="w-full" onClick={() => submit.mutate()} disabled={submit.isPending}>
-                  {t("review.submit")}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" size="sm" onClick={openCreate}>
+            {t("review.write")}
+          </Button>
         )}
       </div>
+
+      <ReviewEditor canteenId={canteenId} open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditingId(null); }} initial={initial} onSave={(f) => save.mutate(f)} saving={save.isPending} />
 
       <div className="mt-5 space-y-4">
         {(reviews ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("review.empty")}</p>}
@@ -175,6 +297,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
           const score = votes.reduce((s, v) => s + v.value, 0);
           const mine = votes.find((v) => v.user_id === user?.id)?.value ?? 0;
           const replies = (r.review_replies ?? []) as { id: string; body: string; user_id: string }[];
+          const canManage = isAdmin || r.user_id === user?.id;
           return (
             <article key={r.id} className="surface-card p-5">
               <div className="flex items-start gap-3">
@@ -188,6 +311,32 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
                       @{author?.username}
                     </Link>
                     <span className="text-xs text-muted-foreground">{author?.class ? formatClass(author.class, lang) : ""}</span>
+                    {canManage && (
+                      <span className="ml-auto flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t("review.edit")} onClick={() => openEdit(r)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" aria-label={t("common.delete")}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
+                              <AlertDialogDescription>{t("review.deleteConfirm")}</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => remove(r.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                {t("common.delete")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </span>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
@@ -199,7 +348,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
                   </div>
                   {r.body && <p className="mt-3 whitespace-pre-wrap text-sm">{r.body}</p>}
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    {r.order_type && <span>{t("review.orderType")}: {r.order_type}</span>}
+                    {r.order_type && <span>{t("review.orderType")}: {orderTypeLabel(r.order_type, t)}</span>}
                     {r.food_type && <span>{t("review.foodType")}: {r.food_type}</span>}
                     {r.price_per_person > 0 && <span>{t("review.pricePerPerson")}: {formatRupiah(r.price_per_person)}</span>}
                   </div>
@@ -222,9 +371,16 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
                   {replies.length > 0 && (
                     <div className="mt-3 space-y-2 border-l-2 border-border pl-3">
                       {replies.map((rep) => (
-                        <p key={rep.id} className="text-sm">
-                          <span className="font-semibold">@{people?.[rep.user_id]?.username ?? "user"}</span>{" "}
-                          <span className="text-muted-foreground">{rep.body}</span>
+                        <p key={rep.id} className="flex items-start gap-2 text-sm">
+                          <span className="flex-1">
+                            <span className="font-semibold">@{people?.[rep.user_id]?.username ?? "user"}</span>{" "}
+                            <span className="text-muted-foreground">{rep.body}</span>
+                          </span>
+                          {(isAdmin || rep.user_id === user?.id) && (
+                            <button aria-label={t("common.delete")} className="text-muted-foreground hover:text-destructive" onClick={() => removeReply(rep.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </p>
                       ))}
                     </div>
