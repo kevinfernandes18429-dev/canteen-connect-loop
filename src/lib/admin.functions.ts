@@ -27,7 +27,7 @@ export const adminListUsers = createServerFn({ method: "GET" })
       page += 1;
     }
     const [{ data: profiles }, { data: roles }] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, username, full_name, class, last_active_at, avatar_url"),
+      supabaseAdmin.from("profiles").select("id, username, full_name, class, last_active_at, avatar_url, created_at"),
       supabaseAdmin.from("user_roles").select("user_id, role"),
     ]);
     const roleMap = new Map((roles ?? []).map((r) => [r.user_id, r.role]));
