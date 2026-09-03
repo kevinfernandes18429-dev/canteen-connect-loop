@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, formatRupiah, type TKey } from "@/lib/i18n";
 import { formatClass } from "@/lib/classes";
+import { canteenImage } from "@/lib/canteen-images";
 import { ACTIVE_STATUSES, BREAK_TIMES, ORDER_STATUSES, STATUS_STYLES } from "@/lib/constants";
 import { uploadMedia } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
@@ -83,13 +84,107 @@ function SellerPage() {
     );
   }
 
-  return <SellerDashboard canteenId={canteen.id} canteenName={canteen.name} lang={lang} />;
+  return <SellerDashboard canteen={canteen} lang={lang} />;
 }
 
 type ItemForm = { name: string; description: string; price: string; image_url: string | null; is_available: boolean };
 const EMPTY_ITEM: ItemForm = { name: "", description: "", price: "", image_url: null, is_available: true };
 
-function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; canteenName: string; lang: "id" | "en" }) {
+type Canteen = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  description_en: string;
+  image_url: string | null;
+  banner_url: string | null;
+};
+
+function CanteenProfileForm({ canteen }: { canteen: Canteen }) {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    name: canteen.name,
+    description: canteen.description,
+    description_en: canteen.description_en,
+    image_url: canteen.image_url,
+    banner_url: canteen.banner_url,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const pick = async (kind: "image_url" | "banner_url", file?: File) => {
+    if (!file || !user) return;
+    try {
+      const url = await uploadMedia(user.id, file, kind === "image_url" ? "canteen" : "canteen-banner");
+      setForm((f) => ({ ...f, [kind]: url }));
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const save = async () => {
+    if (!form.name.trim()) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("canteens")
+      .update({
+        name: form.name.trim().slice(0, 60),
+        description: form.description.trim().slice(0, 300),
+        description_en: form.description_en.trim().slice(0, 300),
+        image_url: form.image_url,
+        banner_url: form.banner_url,
+      })
+      .eq("id", canteen.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("settings.saved"));
+    void qc.invalidateQueries({ queryKey: ["my-canteen"] });
+    void qc.invalidateQueries({ queryKey: ["canteens"] });
+    void qc.invalidateQueries({ queryKey: ["canteen", canteen.slug] });
+  };
+
+  return (
+    <div className="anim-rise space-y-5">
+      <div
+        className="h-36 rounded-2xl bg-primary/15 bg-cover bg-center transition-all"
+        style={{ backgroundImage: `url(${form.banner_url || canteenImage(canteen.slug, form.image_url)})` }}
+      />
+      <div className="flex items-center gap-4">
+        <img src={canteenImage(canteen.slug, form.image_url)} alt={form.name} className="h-16 w-16 rounded-xl object-cover" />
+        <div className="grid flex-1 gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs">{t("seller.canteenImage")}</Label>
+            <Input type="file" accept="image/*" onChange={(e) => pick("image_url", e.target.files?.[0])} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">{t("seller.canteenBanner")}</Label>
+            <Input type="file" accept="image/*" onChange={(e) => pick("banner_url", e.target.files?.[0])} />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>{t("seller.canteenName")}</Label>
+        <Input value={form.name} maxLength={60} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+      </div>
+      <div className="space-y-1.5">
+        <Label>{t("seller.canteenDesc")}</Label>
+        <Textarea value={form.description} rows={3} maxLength={300} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+      </div>
+      <div className="space-y-1.5">
+        <Label>{t("seller.canteenDescEn")}</Label>
+        <Textarea value={form.description_en} rows={3} maxLength={300} onChange={(e) => setForm({ ...form, description_en: e.target.value })} />
+      </div>
+      <Button onClick={save} disabled={saving || !form.name.trim()}>
+        {t("seller.save")}
+      </Button>
+    </div>
+  );
+}
+
+function SellerDashboard({ canteen, lang }: { canteen: Canteen; lang: "id" | "en" }) {
+  const canteenId = canteen.id;
+  const canteenName = canteen.name;
   const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -204,6 +299,7 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
         <TabsList>
           <TabsTrigger value="orders">{t("seller.orders")}</TabsTrigger>
           <TabsTrigger value="menu">{t("seller.menu")}</TabsTrigger>
+          <TabsTrigger value="profile">{t("seller.canteenProfile")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="mt-6">
@@ -459,6 +555,10 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
               </AlertDialog>
             </div>
           ))}
+        </TabsContent>
+
+        <TabsContent value="profile" className="mt-6">
+          <CanteenProfileForm key={canteen.id + canteen.name + (canteen.banner_url ?? "") + (canteen.image_url ?? "")} canteen={canteen} />
         </TabsContent>
       </Tabs>
     </div>

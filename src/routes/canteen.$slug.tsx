@@ -97,9 +97,9 @@ function CanteenPage() {
   return (
     <div>
       <div className="relative h-52 w-full overflow-hidden md:h-72">
-        <img src={canteenImage(canteen.slug, canteen.image_url)} alt={canteen.name} className="h-full w-full object-cover" />
+        <img src={canteen.banner_url || canteenImage(canteen.slug, canteen.image_url)} alt={canteen.name} className="anim-pop h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        <div className="absolute bottom-5 left-1/2 w-full max-w-6xl -translate-x-1/2 px-4">
+        <div className="anim-rise absolute bottom-5 left-1/2 w-full max-w-6xl -translate-x-1/2 px-4">
           <h1 className="font-display text-3xl font-bold md:text-4xl">{canteen.name}</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             {lang === "en" ? canteen.description_en || canteen.description : canteen.description}
@@ -108,7 +108,7 @@ function CanteenPage() {
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-10">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {(items ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("menu.empty")}</p>}
           {(items ?? []).map((item) => (
             <div key={item.id} className="surface-card flex flex-col overflow-hidden">

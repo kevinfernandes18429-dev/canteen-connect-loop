@@ -57,9 +57,11 @@ type ReviewForm = {
   orderType: string;
   foods: string[];
   price: number;
+  quantity: number;
 };
 
-const EMPTY_FORM: ReviewForm = { food: 5, service: 5, body: "", orderType: "", foods: [], price: 0 };
+const EMPTY_FORM: ReviewForm = { food: 5, service: 5, body: "", orderType: "", foods: [], price: 0, quantity: 1 };
+const QTY_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
 /** Shared review editor used by students (create/edit own) and admins (edit any). */
 export function ReviewEditor({
@@ -143,11 +145,28 @@ export function ReviewEditor({
               ))}
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>{t("review.pricePerPerson")}</Label>
-            <Input value={formatRupiah(form.price)} readOnly className="bg-secondary/60" />
-            <p className="text-xs text-muted-foreground">{t("review.priceAuto")}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t("review.quantity")}</Label>
+              <Select value={String(form.quantity)} onValueChange={(v) => setForm({ ...form, quantity: Number(v) })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {QTY_OPTIONS.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("review.pricePerPerson")}</Label>
+              <Input value={formatRupiah(form.price)} readOnly className="bg-secondary/60" />
+            </div>
           </div>
+          <p className="-mt-2 text-xs text-muted-foreground">{t("review.priceAuto")}</p>
           <div className="space-y-1.5">
             <Label>{t("review.body")}</Label>
             <Textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} maxLength={1000} rows={4} />
@@ -211,6 +230,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
         order_type: f.orderType.slice(0, 60),
         food_type: f.foods.join(", ").slice(0, 200),
         price_per_person: f.price,
+        quantity: Math.min(20, Math.max(1, Math.round(f.quantity))),
         food_rating: f.food,
         service_rating: f.service,
       };
@@ -243,6 +263,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
       orderType: r.order_type,
       foods: r.food_type ? r.food_type.split(", ").filter(Boolean) : [],
       price: r.price_per_person,
+      quantity: r.quantity ?? 1,
     });
     setOpen(true);
   };
@@ -289,7 +310,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
 
       <ReviewEditor canteenId={canteenId} open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditingId(null); }} initial={initial} onSave={(f) => save.mutate(f)} saving={save.isPending} />
 
-      <div className="mt-5 space-y-4">
+      <div className="stagger mt-5 space-y-4">
         {(reviews ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("review.empty")}</p>}
         {(reviews ?? []).map((r) => {
           const author = people?.[r.user_id] ?? null;
@@ -350,6 +371,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     {r.order_type && <span>{t("review.orderType")}: {orderTypeLabel(r.order_type, t)}</span>}
                     {r.food_type && <span>{t("review.foodType")}: {r.food_type}</span>}
+                    <span>{t("review.quantity")}: {r.quantity ?? 1} {t("review.portion")}</span>
                     {r.price_per_person > 0 && <span>{t("review.pricePerPerson")}: {formatRupiah(r.price_per_person)}</span>}
                   </div>
 
