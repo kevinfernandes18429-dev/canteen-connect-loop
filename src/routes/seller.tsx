@@ -113,7 +113,7 @@ function SellerPage() {
 type ItemForm = { name: string; description: string; price: string; image_url: string | null; is_available: boolean };
 const EMPTY_ITEM: ItemForm = { name: "", description: "", price: "", image_url: null, is_available: true };
 
-function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; canteenName: string; lang: string }) {
+function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; canteenName: string; lang: "id" | "en" }) {
   const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
