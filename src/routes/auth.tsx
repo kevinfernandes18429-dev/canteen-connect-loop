@@ -5,6 +5,8 @@ import { UtensilsCrossed } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { ClassPicker } from "@/components/app/ClassPicker";
+import { EMPTY_CLASS, isClassComplete, serializeClass, type ClassValue } from "@/lib/classes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +44,7 @@ const signUpSchema = z.object({
     }),
   password: z.string().min(8).max(72),
   fullName: z.string().trim().min(2).max(80),
-  klass: z.string().trim().min(1).max(20),
+  klass: z.string().trim().min(1).max(40),
 });
 
 function AuthPage() {
@@ -59,7 +61,7 @@ function AuthPage() {
   const [suEmail, setSuEmail] = useState("");
   const [suPassword, setSuPassword] = useState("");
   const [suFullName, setSuFullName] = useState("");
-  const [suClass, setSuClass] = useState("");
+  const [suClass, setSuClass] = useState<ClassValue>(EMPTY_CLASS);
   const [suRole, setSuRole] = useState<"student" | "canteen_owner">("student");
 
   // dialogs
@@ -122,12 +124,16 @@ function AuthPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (suRole === "student" && !isClassComplete(suClass)) {
+      toast.error(t("auth.class"));
+      return;
+    }
     const parsed = signUpSchema.safeParse({
       username: suUsername,
       email: suEmail,
       password: suPassword,
       fullName: suFullName,
-      klass: suClass,
+      klass: suRole === "student" ? serializeClass(suClass) : "-",
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? t("common.error"));
@@ -251,10 +257,12 @@ function AuthPage() {
                 <Label htmlFor="su-name">{t("auth.fullName")}</Label>
                 <Input id="su-name" value={suFullName} onChange={(e) => setSuFullName(e.target.value)} required maxLength={80} />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="su-class">{t("auth.class")}</Label>
-                <Input id="su-class" value={suClass} onChange={(e) => setSuClass(e.target.value)} placeholder="10 IPA 1" required maxLength={20} />
-              </div>
+              {suRole === "student" && (
+                <div className="space-y-1.5">
+                  <Label>{t("auth.class")}</Label>
+                  <ClassPicker value={suClass} onChange={setSuClass} />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="su-email">{t("auth.email")}</Label>
                 <Input id="su-email" type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required maxLength={255} />

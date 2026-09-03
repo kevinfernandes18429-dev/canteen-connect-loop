@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChefHat, LogOut, Menu, Search, Settings, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { Bell, ChefHat, LogOut, Menu, Moon, Search, Settings, ShieldCheck, ShoppingCart, Sun, UtensilsCrossed } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
 import { useI18n, type TKey } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -38,6 +39,21 @@ function LangToggle() {
         </button>
       ))}
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { resolved, setTheme } = useTheme();
+  const { t } = useI18n();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label={resolved === "dark" ? t("theme.light") : t("theme.dark")}
+      onClick={() => setTheme(resolved === "dark" ? "light" : "dark")}
+    >
+      {resolved === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </Button>
   );
 }
 
@@ -155,6 +171,16 @@ export function AppHeader() {
               {t("nav.seller")}
             </Link>
           )}
+          {role === "admin" && (
+            <Link
+              to="/admin"
+              activeProps={{ className: "bg-secondary text-foreground" }}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <ShieldCheck className="mr-1 inline h-4 w-4" />
+              {t("nav.admin")}
+            </Link>
+          )}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -170,6 +196,7 @@ export function AppHeader() {
             </form>
           )}
           <LangToggle />
+          <ThemeToggle />
           {user && <NotificationBell />}
           {user && (
             <Link to="/cart" className="relative">
@@ -255,6 +282,11 @@ export function AppHeader() {
                 {role === "canteen_owner" && (
                   <Link to="/seller" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-secondary">
                     {t("nav.seller")}
+                  </Link>
+                )}
+                {role === "admin" && (
+                  <Link to="/admin" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-secondary">
+                    {t("nav.admin")}
                   </Link>
                 )}
                 <Link to="/settings" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-secondary">

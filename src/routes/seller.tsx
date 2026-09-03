@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, formatRupiah, type TKey } from "@/lib/i18n";
+import { formatClass } from "@/lib/classes";
 import { BREAK_TIMES, ORDER_STATUSES, STATUS_STYLES } from "@/lib/constants";
 import { uploadMedia } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
@@ -112,7 +113,7 @@ function SellerPage() {
 type ItemForm = { name: string; description: string; price: string; image_url: string | null; is_available: boolean };
 const EMPTY_ITEM: ItemForm = { name: "", description: "", price: "", image_url: null, is_available: true };
 
-function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; canteenName: string; lang: string }) {
+function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; canteenName: string; lang: "id" | "en" }) {
   const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -246,7 +247,7 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
                       ) : (
                         t("seller.customer")
                       )}
-                      {cust?.class ? <span className="ml-2 text-xs font-normal text-muted-foreground">{cust.class}</span> : null}
+                      {cust?.class ? <span className="ml-2 text-xs font-normal text-muted-foreground">{formatClass(cust.class, lang)}</span> : null}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {cust ? "@" + cust.username + " · " : ""}

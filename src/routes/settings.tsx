@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, type Lang, type TKey } from "@/lib/i18n";
 import { uploadMedia } from "@/lib/upload";
+import { useTheme, type Theme } from "@/lib/theme";
+import { ClassPicker } from "@/components/app/ClassPicker";
+import { EMPTY_CLASS, isClassComplete, parseClass, serializeClass, type ClassValue } from "@/lib/classes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,10 +35,12 @@ const PRESENCES = ["online", "idle", "dnd", "invisible"] as const;
 
 function SettingsPage() {
   const { t, lang, setLang } = useI18n();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, role, refreshProfile } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const [username, setUsername] = useState("");
+  const [klass, setKlass] = useState<ClassValue>(EMPTY_CLASS);
   const [form, setForm] = useState({
     full_name: "",
-    class: "",
     bio: "",
     status_text: "",
     status_emoji: "",
@@ -48,9 +53,10 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!profile) return;
+    setUsername(profile.username);
+    setKlass(parseClass(profile.class));
     setForm({
       full_name: profile.full_name,
-      class: profile.class,
       bio: profile.bio,
       status_text: profile.status_text,
       status_emoji: profile.status_emoji,
@@ -73,12 +79,20 @@ function SettingsPage() {
 
   const save = async () => {
     if (!user) return;
+    const uname = username.trim().toLowerCase();
+    if (!/^[a-z0-9_.]{3,20}$/.test(uname)) { toast.error(t("settings.usernameHint")); return; }
+    if (role === "student" && !isClassComplete(klass)) { toast.error(t("auth.class")); return; }
     setSaving(true);
+    if (uname !== profile?.username) {
+      const { data: available } = await supabase.rpc("username_available", { _username: uname });
+      if (available === false) { setSaving(false); toast.error(t("auth.usernameTaken")); return; }
+    }
     const { error } = await supabase
       .from("profiles")
       .update({
+        username: uname,
         full_name: form.full_name.slice(0, 80),
-        class: form.class.slice(0, 20),
+        class: role === "student" ? serializeClass(klass) : profile?.class ?? "",
         bio: form.bio.slice(0, 300),
         status_text: form.status_text.slice(0, 80),
         status_emoji: form.status_emoji.slice(0, 8),
@@ -90,7 +104,7 @@ function SettingsPage() {
       })
       .eq("id", user.id);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message.includes("unique") ? t("auth.usernameTaken") : error.message); return; }
     await refreshProfile();
     toast.success(t("settings.saved"));
   };
@@ -113,7 +127,7 @@ function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">{t("settings.profile")}</TabsTrigger>
           <TabsTrigger value="security">{t("settings.security")}</TabsTrigger>
-          <TabsTrigger value="lang">{t("settings.appearance")}</TabsTrigger>
+          <TabsTrigger value="lang">{t("settings.appearance")} · {t("settings.theme")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-6 space-y-5">
@@ -139,13 +153,23 @@ function SettingsPage() {
           </div>
 
           <div className="space-y-1.5">
+            <Label>{t("settings.username")}</Label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">@</span>
+              <Input value={username} maxLength={20} className="pl-7" onChange={(e) => setUsername(e.target.value)} />
+            </div>
+            <p className="text-xs text-muted-foreground">{t("settings.usernameHint")}</p>
+          </div>
+          <div className="space-y-1.5">
             <Label>{t("auth.fullName")}</Label>
             <Input value={form.full_name} maxLength={80} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label>{t("auth.class")}</Label>
-            <Input value={form.class} maxLength={20} onChange={(e) => setForm({ ...form, class: e.target.value })} />
-          </div>
+          {role === "student" && (
+            <div className="space-y-1.5">
+              <Label>{t("auth.class")}</Label>
+              <ClassPicker value={klass} onChange={setKlass} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>{t("settings.bio")}</Label>
             <Textarea value={form.bio} maxLength={300} rows={3} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
@@ -211,6 +235,24 @@ function SettingsPage() {
                 <SelectItem value="en">English</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("settings.theme")}</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["light", "dark", "system"] as Theme[]).map((th) => (
+                <button
+                  key={th}
+                  type="button"
+                  onClick={() => setTheme(th)}
+                  className={
+                    "rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors " +
+                    (theme === th ? "border-primary bg-primary/8 text-primary" : "border-border text-muted-foreground hover:bg-secondary")
+                  }
+                >
+                  {t(("theme." + th) as TKey)}
+                </button>
+              ))}
+            </div>
           </div>
           <Button onClick={save} disabled={saving}>
             {t("settings.save")}

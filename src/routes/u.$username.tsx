@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n, type TKey } from "@/lib/i18n";
+import { formatClass } from "@/lib/classes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PresenceDot } from "@/components/app/PresenceDot";
 
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/u/$username")({
 
 function ProfilePage() {
   const { username } = Route.useParams();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile", username],
@@ -55,7 +56,7 @@ function ProfilePage() {
           </div>
           <h1 className="mt-4 font-display text-2xl font-bold">{profile.full_name || profile.username}</h1>
           <p className="text-sm text-muted-foreground">
-            @{profile.username} {profile.class && `· ${profile.class}`}
+            @{profile.username} {profile.class && `· ${formatClass(profile.class, lang)}`}
           </p>
           {(profile.status_text || profile.status_emoji) && (
             <p className="mt-3 inline-block rounded-2xl bg-secondary px-3 py-1.5 text-sm">

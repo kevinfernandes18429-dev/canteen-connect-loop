@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, formatRupiah } from "@/lib/i18n";
+import { formatClass } from "@/lib/classes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,7 @@ function Stars({ value, onChange }: { value: number; onChange?: (v: number) => v
 }
 
 export function CanteenReviews({ canteenId }: { canteenId: string }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -186,7 +187,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
                     <Link to="/u/$username" params={{ username: author?.username ?? "" }} className="text-sm font-semibold hover:underline">
                       @{author?.username}
                     </Link>
-                    <span className="text-xs text-muted-foreground">{author?.class}</span>
+                    <span className="text-xs text-muted-foreground">{author?.class ? formatClass(author.class, lang) : ""}</span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">

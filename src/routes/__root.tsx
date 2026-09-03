@@ -12,6 +12,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
+import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import { LoadingScreen } from "@/components/app/LoadingScreen";
@@ -114,8 +115,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -145,24 +147,26 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <CartProvider>
-            <Boot>
-              <div className="flex min-h-screen flex-col">
-                <AppHeader />
-                <main className="flex-1">
-                  <Outlet />
-                </main>
-                <footer className="border-t border-border/70 py-8 text-center text-xs text-muted-foreground">
-                  © {new Date().getFullYear()} Kantin IPEKA Pluit
-                </footer>
-              </div>
-            </Boot>
-            <Toaster position="top-center" richColors />
-          </CartProvider>
-        </AuthProvider>
-      </LanguageProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Boot>
+                <div className="flex min-h-screen flex-col">
+                  <AppHeader />
+                  <main className="flex-1">
+                    <Outlet />
+                  </main>
+                  <footer className="border-t border-border/70 py-8 text-center text-xs text-muted-foreground">
+                    © {new Date().getFullYear()} Kantin IPEKA Pluit
+                  </footer>
+                </div>
+              </Boot>
+              <Toaster position="top-center" richColors />
+            </CartProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -15,7 +15,7 @@ export function ClassPicker({ value, onChange }: { value: ClassValue; onChange: 
         <div className="col-span-2 space-y-1 sm:col-span-1">
           <Label className="text-xs text-muted-foreground">{t("class.level")}</Label>
           <Select
-            value={value.level || undefined}
+            value={value.level}
             onValueChange={(v) => onChange({ level: v as Level, grade: "", section: "", major: "" })}
           >
             <SelectTrigger>
@@ -34,7 +34,7 @@ export function ClassPicker({ value, onChange }: { value: ClassValue; onChange: 
           <>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{t("class.grade")}</Label>
-              <Select value={value.grade || undefined} onValueChange={(v) => onChange({ ...value, grade: v, major: "" })}>
+              <Select value={value.grade} onValueChange={(v) => onChange({ ...value, grade: v, major: "" })}>
                 <SelectTrigger>
                   <SelectValue placeholder="—" />
                 </SelectTrigger>
@@ -49,7 +49,7 @@ export function ClassPicker({ value, onChange }: { value: ClassValue; onChange: 
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{t("class.section")}</Label>
-              <Select value={value.section || undefined} onValueChange={(v) => onChange({ ...value, section: v })}>
+              <Select value={value.section} onValueChange={(v) => onChange({ ...value, section: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="—" />
                 </SelectTrigger>
@@ -68,7 +68,7 @@ export function ClassPicker({ value, onChange }: { value: ClassValue; onChange: 
       {showMajor && (
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">{t("class.major")}</Label>
-          <Select value={value.major || undefined} onValueChange={(v) => onChange({ ...value, major: v })}>
+          <Select value={value.major} onValueChange={(v) => onChange({ ...value, major: v })}>
             <SelectTrigger>
               <SelectValue placeholder="—" />
             </SelectTrigger>
