@@ -62,6 +62,41 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          canteen_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          canteen_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          canteen_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_canteen_id_fkey"
+            columns: ["canteen_id"]
+            isOneToOne: false
+            referencedRelation: "canteens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deleted_accounts: {
         Row: {
           deleted_at: string
@@ -229,26 +264,36 @@ export type Database = {
       messages: {
         Row: {
           body: string
+          conversation_id: string
           created_at: string
           id: string
-          order_id: string
+          order_id: string | null
           sender_id: string
         }
         Insert: {
           body: string
+          conversation_id: string
           created_at?: string
           id?: string
-          order_id: string
+          order_id?: string | null
           sender_id: string
         }
         Update: {
           body?: string
+          conversation_id?: string
           created_at?: string
           id?: string
-          order_id?: string
+          order_id?: string | null
           sender_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_order_id_fkey"
             columns: ["order_id"]

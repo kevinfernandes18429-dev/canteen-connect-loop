@@ -54,16 +54,38 @@ export const adminSetRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Permanently deletes an account. Admin only. */
-export const adminDeleteUser = createServerFn({ method: "POST" })
+/** Permanently deletes one or more accounts. Admin only. */
+export const adminDeleteUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
+  .inputValidator((d) => z.object({ userIds: z.array(z.string().uuid()).min(1).max(200) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
-    if (data.userId === (context as Ctx).userId) throw new Error("Cannot delete yourself");
+    const me = (context as Ctx).userId;
+    if (data.userIds.includes(me)) throw new Error("Cannot delete yourself");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
-    if (error) throw new Error("Failed to delete user");
+    let removed = 0;
+    for (const id of data.userIds) {
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+      if (!error) removed += 1;
+    }
+    if (removed === 0) throw new Error("Failed to delete user");
+    return { ok: true, removed };
+  });
+
+/** Verifies a canteen owner: ensures the role and assigns the canteen. Admin only. */
+export const adminVerifyOwner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ userId: z.string().uuid(), canteenId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
+    const { error: roleErr } = await supabaseAdmin.from("user_roles").insert({ user_id: data.userId, role: "canteen_owner" });
+    if (roleErr) throw new Error("Failed to set role");
+    // release any canteen this user previously owned, then assign the chosen one
+    await supabaseAdmin.from("canteens").update({ owner_id: null }).eq("owner_id", data.userId);
+    const { error } = await supabaseAdmin.from("canteens").update({ owner_id: data.userId }).eq("id", data.canteenId);
+    if (error) throw new Error("Failed to assign canteen");
     return { ok: true };
   });
 

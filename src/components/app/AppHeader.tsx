@@ -123,8 +123,9 @@ const navLinks = [
   { to: "/", key: "nav.home" as TKey },
   { to: "/canteens", key: "nav.canteens" as TKey },
   { to: "/orders", key: "nav.orders" as TKey },
+  { to: "/chat", key: "nav.chat" as TKey },
   { to: "/forum", key: "nav.forum" as TKey },
-];
+] as const;
 
 export function AppHeader() {
   const { t } = useI18n();
