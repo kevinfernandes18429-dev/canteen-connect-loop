@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, formatRupiah } from "@/lib/i18n";
+import { formatClass } from "@/lib/classes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,7 @@ function Stars({ value, onChange }: { value: number; onChange?: (v: number) => v
 }
 
 export function CanteenReviews({ canteenId }: { canteenId: string }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);

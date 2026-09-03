@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, formatRupiah, type TKey } from "@/lib/i18n";
+import { formatClass } from "@/lib/classes";
 import { BREAK_TIMES, ORDER_STATUSES, STATUS_STYLES } from "@/lib/constants";
 import { uploadMedia } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
