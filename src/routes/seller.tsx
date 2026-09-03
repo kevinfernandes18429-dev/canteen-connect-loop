@@ -206,80 +206,107 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
           <TabsTrigger value="menu">{t("seller.menu")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="orders" className="mt-6 space-y-4">
-          {(orders ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("orders.empty")}</p>}
-          {(orders ?? []).map((o) => {
-            const brk = BREAK_TIMES.find((b) => b.value === o.break_time);
-            const cust = customers?.get(o.user_id);
-            return (
-              <article key={o.id} className="surface-card p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">
-                      {cust ? (
-                        <Link to="/u/$username" params={{ username: cust.username }} className="hover:underline">
-                          {cust.full_name || cust.username}
-                        </Link>
-                      ) : (
-                        t("seller.customer")
-                      )}
-                      {cust?.class ? <span className="ml-2 text-xs font-normal text-muted-foreground">{formatClass(cust.class, lang)}</span> : null}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {cust ? "@" + cust.username + " · " : ""}
-                      {o.pickup_date} · {lang === "en" ? brk?.labelEn : brk?.labelId}
-                    </p>
-                  </div>
-                  <span className={"rounded-full px-3 py-1 text-xs font-semibold " + (STATUS_STYLES[o.status] ?? "")}>
-                    {t(("status." + o.status) as TKey)}
-                  </span>
-                </div>
-                <ul className="mt-3 space-y-1 text-sm">
-                  {(o.order_items ?? []).map((i) => (
-                    <li key={i.id}>
-                      {i.quantity}× {i.name}
-                      {i.notes ? <span className="text-muted-foreground"> — {i.notes}</span> : null}
-                    </li>
-                  ))}
-                </ul>
-                {o.notes && <p className="mt-2 text-xs text-muted-foreground">{o.notes}</p>}
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <span className="font-display font-bold">{formatRupiah(o.total)}</span>
-                  <div className="flex items-center gap-2">
-                    <Select value={o.status} onValueChange={(v) => setStatus(o.id, v)}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ORDER_STATUSES.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {t(("status." + s) as TKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm">{t("seller.markDone")}</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t("seller.confirmTitle")}</AlertDialogTitle>
-                          <AlertDialogDescription>{t("seller.confirmDone")}</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => setStatus(o.id, "completed")}>
-                            {t("common.confirm")}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+        <TabsContent value="orders" className="mt-6">
+          <Tabs defaultValue="active">
+            <TabsList className="h-8">
+              <TabsTrigger value="active" className="text-xs">
+                {t("seller.active")} ({(orders ?? []).filter((o) => ACTIVE_STATUSES.includes(o.status)).length})
+              </TabsTrigger>
+              <TabsTrigger value="done" className="text-xs">
+                {t("seller.done")}
+              </TabsTrigger>
+            </TabsList>
+            {(["active", "done"] as const).map((tab) => {
+              const rows = (orders ?? []).filter((o) => (tab === "active" ? ACTIVE_STATUSES.includes(o.status) : !ACTIVE_STATUSES.includes(o.status)));
+              return (
+                <TabsContent key={tab} value={tab} className="mt-4 space-y-4">
+                  {rows.length === 0 && <p className="text-sm text-muted-foreground">{t("orders.empty")}</p>}
+                  {rows.map((o) => {
+                    const brk = BREAK_TIMES.find((b) => b.value === o.break_time);
+                    const cust = customers?.get(o.user_id);
+                    const done = !ACTIVE_STATUSES.includes(o.status);
+                    return (
+                      <article key={o.id} className={"surface-card p-5 " + (done ? "opacity-80" : "")}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="font-semibold">
+                              {cust ? (
+                                <Link to="/u/$username" params={{ username: cust.username }} className="hover:underline">
+                                  {cust.full_name || cust.username}
+                                </Link>
+                              ) : (
+                                t("seller.customer")
+                              )}
+                              {cust?.class ? <span className="ml-2 text-xs font-normal text-muted-foreground">{formatClass(cust.class, lang)}</span> : null}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {cust ? "@" + cust.username + " · " : ""}
+                              {o.pickup_date} · {lang === "en" ? brk?.labelEn : brk?.labelId}
+                            </p>
+                          </div>
+                          <span className={"rounded-full px-3 py-1 text-xs font-semibold " + (STATUS_STYLES[o.status] ?? "")}>
+                            {t(("status." + o.status) as TKey)}
+                          </span>
+                        </div>
+                        <ul className="mt-3 space-y-1 text-sm">
+                          {(o.order_items ?? []).map((i) => (
+                            <li key={i.id}>
+                              {i.quantity}× {i.name}
+                              {i.notes ? <span className="text-muted-foreground"> — {i.notes}</span> : null}
+                            </li>
+                          ))}
+                        </ul>
+                        {o.notes && <p className="mt-2 text-xs text-muted-foreground">{o.notes}</p>}
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                          <span className="font-display font-bold">{formatRupiah(o.total)}</span>
+                          <div className="flex items-center gap-2">
+                            {cust && (
+                              <Button asChild size="sm" variant="ghost">
+                                <Link to="/chat" search={{ canteen: undefined, c: undefined }}>
+                                  {t("nav.chat")}
+                                </Link>
+                              </Button>
+                            )}
+                            <Select value={o.status} onValueChange={(v) => setStatus(o.id, v)}>
+                              <SelectTrigger className="w-40">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ORDER_STATUSES.map((s) => (
+                                  <SelectItem key={s} value={s}>
+                                    {t(("status." + s) as TKey)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {!done && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm">{t("seller.markDone")}</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>{t("seller.confirmTitle")}</AlertDialogTitle>
+                                    <AlertDialogDescription>{t("seller.confirmDone")}</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => setStatus(o.id, "completed")}>
+                                      {t("common.confirm")}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </TabsContent>
+              );
+            })}
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="menu" className="mt-6 space-y-4">
