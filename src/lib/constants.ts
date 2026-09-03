@@ -6,6 +6,9 @@ export const BREAK_TIMES = [
 
 export const ORDER_STATUSES = ["pending", "preparing", "in_kitchen", "ready", "completed", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export const ACTIVE_STATUSES: readonly string[] = ["pending", "preparing", "in_kitchen", "ready"];
+
+export const ORDER_TYPES = ["preorder", "dinein", "takeaway"] as const;
 
 export const STATUS_STYLES: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
