@@ -262,7 +262,7 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
                           <div className="flex items-center gap-2">
                             {cust && (
                               <Button asChild size="sm" variant="ghost">
-                                <Link to="/chat" search={{ canteen: undefined, c: undefined }}>
+                                <Link to="/chat" search={{ student: o.user_id }}>
                                   {t("nav.chat")}
                                 </Link>
                               </Button>

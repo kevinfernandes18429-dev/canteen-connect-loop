@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/chat")({
-  validateSearch: z.object({ canteen: z.string().optional(), c: z.string().optional() }),
+  validateSearch: z.object({ canteen: z.string().optional(), c: z.string().optional(), student: z.string().optional() }),
   head: () => ({
     meta: [
       { title: "Chat — Kantin IPEKA Pluit" },
@@ -143,8 +143,11 @@ function ChatPage() {
     } else if (search.canteen) {
       const hit = contacts.find((c) => c.canteenSlug === search.canteen);
       if (hit) setActiveKey(hit.key);
+    } else if (search.student) {
+      const hit = contacts.find((c) => c.studentId === search.student);
+      if (hit) setActiveKey(hit.key);
     }
-  }, [contacts, search.c, search.canteen, activeKey]);
+  }, [contacts, search.c, search.canteen, search.student, activeKey]);
 
   if (loading) return <p className="px-4 py-20 text-center text-sm text-muted-foreground">{t("common.loading")}</p>;
   if (!user) {
