@@ -1,9 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { formatClass } from "@/lib/classes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { PresenceDot } from "@/components/app/PresenceDot";
 
 export const Route = createFileRoute("/u/$username")({
@@ -23,6 +26,7 @@ export const Route = createFileRoute("/u/$username")({
 function ProfilePage() {
   const { username } = Route.useParams();
   const { t, lang } = useI18n();
+  const { user } = useAuth();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile", username],
@@ -37,13 +41,13 @@ function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="overflow-hidden rounded-3xl border border-border bg-card">
+      <div className="anim-pop overflow-hidden rounded-3xl border border-border bg-card">
         <div
           className="h-36 bg-primary/15 bg-cover bg-center"
           style={profile.banner_url ? { backgroundImage: `url(${profile.banner_url})` } : undefined}
         />
         <div className="p-6">
-          <div className="-mt-14 flex items-end gap-4">
+          <div className="-mt-14 flex items-end justify-between gap-4">
             <div className="relative">
               <Avatar className="h-20 w-20 border-4 border-card">
                 <AvatarImage src={profile.avatar_url ?? undefined} alt={profile.username} />
@@ -53,6 +57,13 @@ function ProfilePage() {
               </Avatar>
               <PresenceDot presence={profile.presence} className="absolute bottom-1 right-1 h-4 w-4" />
             </div>
+            {user && user.id !== profile.id && (
+              <Button asChild size="sm" variant="outline" className="mb-1">
+                <Link to="/chat" search={{ u: profile.username }}>
+                  <MessageCircle className="mr-1.5 h-4 w-4" /> {t("nav.chat")}
+                </Link>
+              </Button>
+            )}
           </div>
           <h1 className="mt-4 font-display text-2xl font-bold">{profile.full_name || profile.username}</h1>
           <p className="text-sm text-muted-foreground">

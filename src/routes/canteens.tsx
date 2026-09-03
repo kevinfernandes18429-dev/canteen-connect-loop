@@ -30,13 +30,13 @@ function Canteens() {
     <div className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="font-display text-3xl font-bold">{t("home.chooseCanteen")}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{t("home.chooseCanteenSub")}</p>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="stagger mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {(data ?? []).map((c) => (
           <Link
             key={c.id}
             to="/canteen/$slug"
             params={{ slug: c.slug }}
-            className="surface-card group overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
+            className="surface-card hover-lift group overflow-hidden"
           >
             <div className="aspect-[16/10] overflow-hidden bg-secondary">
               <img

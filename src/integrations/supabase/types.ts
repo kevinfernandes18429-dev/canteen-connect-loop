@@ -28,6 +28,7 @@ export type Database = {
       }
       canteens: {
         Row: {
+          banner_url: string | null
           created_at: string
           description: string
           description_en: string
@@ -39,6 +40,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           created_at?: string
           description?: string
           description_en?: string
@@ -50,6 +52,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           created_at?: string
           description?: string
           description_en?: string
@@ -64,26 +67,29 @@ export type Database = {
       }
       conversations: {
         Row: {
-          canteen_id: string
+          canteen_id: string | null
           created_at: string
           id: string
           last_message_at: string
+          peer_id: string | null
           student_id: string
           updated_at: string
         }
         Insert: {
-          canteen_id: string
+          canteen_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string
+          peer_id?: string | null
           student_id: string
           updated_at?: string
         }
         Update: {
-          canteen_id?: string
+          canteen_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string
+          peer_id?: string | null
           student_id?: string
           updated_at?: string
         }
@@ -562,6 +568,7 @@ export type Database = {
           order_id: string | null
           order_type: string
           price_per_person: number
+          quantity: number
           service_rating: number
           updated_at: string
           user_id: string
@@ -576,6 +583,7 @@ export type Database = {
           order_id?: string | null
           order_type?: string
           price_per_person?: number
+          quantity?: number
           service_rating?: number
           updated_at?: string
           user_id: string
@@ -590,6 +598,7 @@ export type Database = {
           order_id?: string | null
           order_type?: string
           price_per_person?: number
+          quantity?: number
           service_rating?: number
           updated_at?: string
           user_id?: string
@@ -643,6 +652,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_conversation_participant: {
+        Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
       purge_inactive_accounts: { Args: never; Returns: number }

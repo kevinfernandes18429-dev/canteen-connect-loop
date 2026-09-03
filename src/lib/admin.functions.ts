@@ -51,6 +51,8 @@ export const adminSetRole = createServerFn({ method: "POST" })
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
     const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: data.userId, role: data.role });
     if (error) throw new Error("Failed to update role");
+    // Only students have a class
+    if (data.role !== "student") await supabaseAdmin.from("profiles").update({ class: "" }).eq("id", data.userId);
     return { ok: true };
   });
 
@@ -82,6 +84,7 @@ export const adminVerifyOwner = createServerFn({ method: "POST" })
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
     const { error: roleErr } = await supabaseAdmin.from("user_roles").insert({ user_id: data.userId, role: "canteen_owner" });
     if (roleErr) throw new Error("Failed to set role");
+    await supabaseAdmin.from("profiles").update({ class: "" }).eq("id", data.userId);
     // release any canteen this user previously owned, then assign the chosen one
     await supabaseAdmin.from("canteens").update({ owner_id: null }).eq("owner_id", data.userId);
     const { error } = await supabaseAdmin.from("canteens").update({ owner_id: data.userId }).eq("id", data.canteenId);

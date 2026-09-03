@@ -92,7 +92,7 @@ function SettingsPage() {
       .update({
         username: uname,
         full_name: form.full_name.slice(0, 80),
-        class: role === "student" ? serializeClass(klass) : profile?.class ?? "",
+        class: role === "student" ? serializeClass(klass) : "",
         bio: form.bio.slice(0, 300),
         status_text: form.status_text.slice(0, 80),
         status_emoji: form.status_emoji.slice(0, 8),

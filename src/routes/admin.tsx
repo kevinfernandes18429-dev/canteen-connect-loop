@@ -7,9 +7,10 @@ import { Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, formatRupiah } from "@/lib/i18n";
-import { formatClass } from "@/lib/classes";
+import { formatClass, isClassComplete, parseClass, serializeClass, type ClassValue } from "@/lib/classes";
 import { adminDeleteUsers, adminListUsers, adminSetRole, adminUpdateProfile, adminVerifyOwner } from "@/lib/admin.functions";
 import { ReviewEditor, Stars, orderTypeLabel } from "@/components/app/CanteenReviews";
+import { ClassPicker } from "@/components/app/ClassPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,7 +120,7 @@ function UsersTab() {
   const deleteUsers = useServerFn(adminDeleteUsers);
   const updateProfile = useServerFn(adminUpdateProfile);
   const [q, setQ] = useState("");
-  const [editing, setEditing] = useState<{ id: string; username: string; full_name: string; class: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; username: string; full_name: string; role: string; klass: ClassValue } | null>(null);
 
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => listUsers() });
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
@@ -128,7 +129,8 @@ function UsersTab() {
   const roleMut = useMutation({ mutationFn: (v: { userId: string; role: (typeof ROLES)[number] }) => setRole({ data: v }), onSuccess: invalidate, onError: onErr });
   const delMut = useMutation({ mutationFn: (userIds: string[]) => deleteUsers({ data: { userIds } }), onSuccess: () => { sel.clear(); void invalidate(); }, onError: onErr });
   const editMut = useMutation({
-    mutationFn: (v: NonNullable<typeof editing>) => updateProfile({ data: { userId: v.id, username: v.username, full_name: v.full_name, class: v.class } }),
+    mutationFn: (v: NonNullable<typeof editing>) =>
+      updateProfile({ data: { userId: v.id, username: v.username, full_name: v.full_name, class: v.role === "student" ? serializeClass(v.klass) : "" } }),
     onSuccess: () => { setEditing(null); toast.success(t("settings.saved")); void invalidate(); },
     onError: onErr,
   });
@@ -160,7 +162,8 @@ function UsersTab() {
                 <span className="font-normal text-muted-foreground">@{u.username}</span>
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {u.email} · {u.class && u.class !== "-" ? formatClass(u.class, lang) : "—"} · {t("admin.lastActive")}: {new Date(u.last_active_at).toLocaleDateString(lang === "en" ? "en-GB" : "id-ID")}
+                {u.email}
+                {u.role === "student" ? " · " + (u.class && u.class !== "-" ? formatClass(u.class, lang) : "—") : ""} · {t("admin.lastActive")}: {new Date(u.last_active_at).toLocaleDateString(lang === "en" ? "en-GB" : "id-ID")}
               </p>
             </div>
             <Select value={u.role} onValueChange={(v) => roleMut.mutate({ userId: u.id, role: v as (typeof ROLES)[number] })}>
@@ -175,7 +178,7 @@ function UsersTab() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={() => setEditing({ id: u.id, username: u.username, full_name: u.full_name, class: u.class })}>
+            <Button variant="outline" size="sm" onClick={() => setEditing({ id: u.id, username: u.username, full_name: u.full_name, role: u.role, klass: parseClass(u.class) })}>
               {t("common.edit")}
             </Button>
             {u.id !== me?.id && <ConfirmDelete text={t("admin.deleteUserConfirm")} onConfirm={() => delMut.mutate([u.id])} />}
@@ -198,11 +201,16 @@ function UsersTab() {
                 <Label>{t("auth.fullName")}</Label>
                 <Input value={editing.full_name} maxLength={80} onChange={(e) => setEditing({ ...editing, full_name: e.target.value })} />
               </div>
-              <div className="space-y-1">
-                <Label>{t("auth.class")}</Label>
-                <Input value={editing.class} maxLength={40} placeholder="SMA 11.2 Sains Murni" onChange={(e) => setEditing({ ...editing, class: e.target.value })} />
-              </div>
-              <Button onClick={() => editMut.mutate(editing)} disabled={editMut.isPending}>
+              {editing.role === "student" && (
+                <div className="space-y-1">
+                  <Label>{t("auth.class")}</Label>
+                  <ClassPicker value={editing.klass} onChange={(v) => setEditing({ ...editing, klass: v })} />
+                </div>
+              )}
+              <Button
+                onClick={() => editMut.mutate(editing)}
+                disabled={editMut.isPending || (editing.role === "student" && !isClassComplete(editing.klass))}
+              >
                 {t("settings.save")}
               </Button>
             </div>
@@ -399,7 +407,7 @@ function ChatsTab() {
       }
       return (convs ?? []).map((cv) => ({
         ...cv,
-        canteen: cnames.get(cv.canteen_id) ?? "?",
+        canteen: cv.canteen_id ? cnames.get(cv.canteen_id) ?? "?" : "DM · @" + (names.get((cv as { peer_id?: string | null }).peer_id ?? "") ?? "?"),
         student: names.get(cv.student_id) ?? "?",
         messages: (byConv.get(cv.id) ?? []).slice().reverse().map((x) => ({ ...x, sender: names.get(x.sender_id) ?? "?" })),
       }));
@@ -508,7 +516,7 @@ function ReviewsTab() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<{ id: string; canteenId: string } | null>(null);
-  const [initial, setInitial] = useState({ food: 5, service: 5, body: "", orderType: "", foods: [] as string[], price: 0 });
+  const [initial, setInitial] = useState({ food: 5, service: 5, body: "", orderType: "", foods: [] as string[], price: 0, quantity: 1 });
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
 
@@ -606,7 +614,7 @@ function ReviewsTab() {
             size="sm"
             aria-label={t("admin.editReview")}
             onClick={() => {
-              setInitial({ food: Number(r.food_rating), service: Number(r.service_rating), body: r.body, orderType: r.order_type, foods: r.food_type ? r.food_type.split(", ").filter(Boolean) : [], price: r.price_per_person });
+              setInitial({ food: Number(r.food_rating), service: Number(r.service_rating), body: r.body, orderType: r.order_type, foods: r.food_type ? r.food_type.split(", ").filter(Boolean) : [], price: r.price_per_person, quantity: r.quantity ?? 1 });
               setEditing({ id: r.id, canteenId: r.canteen_id });
             }}
           >
