@@ -186,7 +186,7 @@ export function CanteenReviews({ canteenId }: { canteenId: string }) {
                     <Link to="/u/$username" params={{ username: author?.username ?? "" }} className="text-sm font-semibold hover:underline">
                       @{author?.username}
                     </Link>
-                    <span className="text-xs text-muted-foreground">{author?.class}</span>
+                    <span className="text-xs text-muted-foreground">{author?.class ? formatClass(author.class, lang) : ""}</span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">

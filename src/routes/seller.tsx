@@ -246,7 +246,7 @@ function SellerDashboard({ canteenId, canteenName, lang }: { canteenId: string; 
                       ) : (
                         t("seller.customer")
                       )}
-                      {cust?.class ? <span className="ml-2 text-xs font-normal text-muted-foreground">{cust.class}</span> : null}
+                      {cust?.class ? <span className="ml-2 text-xs font-normal text-muted-foreground">{formatClass(cust.class, lang)}</span> : null}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {cust ? "@" + cust.username + " · " : ""}
